@@ -1,2 +1,3 @@
 .idea
 /mnist/
+/__pycache__/
