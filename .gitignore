@@ -1,4 +1,3 @@
 .idea
-/mnist/
 /__pycache__/
-client_dataset
+/client_dataset/
