@@ -18,8 +18,7 @@ class DataSource(object):
 
 class Mnist(DataSource):
 
-    # IID = True
-    IID = False
+    IID = True  # True: generate iid dataset  False: generate non-iid dataset
     MIN_NUM_CLASSES_PER_CLIENT = 3
     MAX_NUM_CLASSES_PER_CLIENT = 3
     
@@ -91,7 +90,7 @@ class Mnist(DataSource):
         idx = np.random.choice(candidates_idx)
         return self.post_process(x[idx], y[idx])
 
-    # generate t, t, v dataset given distribution and split
+    # generate t, t, v client_dataset given distribution and split
     def fake_non_iid_data(self, min_train=100, max_train=1000, data_split=(.6, .3, .1)):
         # my_class_distr = np.array([np.random.random() for _ in range(self.classes.shape[0])])
         # my_class_distr /= np.sum(my_class_distr)
@@ -103,7 +102,7 @@ class Mnist(DataSource):
         test_size = int(train_size / data_split[0] * data_split[1])
         valid_size = int(train_size / data_split[0] * data_split[2])
 
-        train_set = [self.sample_single_non_iid(self.q, self.y_train, my_class_distr) for _ in range(train_size)]
+        train_set = [self.sample_single_non_iid(self.x_train, self.y_train, my_class_distr) for _ in range(train_size)]
         test_set = [self.sample_single_non_iid(self.x_test, self.y_test, my_class_distr) for _ in range(test_size)]
         valid_set = [self.sample_single_non_iid(self.x_valid, self.y_valid, my_class_distr) for _ in range(valid_size)]
         print("done generating fake data")
@@ -112,14 +111,15 @@ class Mnist(DataSource):
 
     def load_local_iid_data(self, client_index):
         # client_index = 01234
-        data_dir = './mnist/iid/'
-        train_data_name = 'train_c' + str(client_index) + '.npy'
+        data_dir = 'client_dataset/mnist/iid/'
+        size = '10000';
+        train_data_name = 'train_c' + str(client_index) + '_' + size + '.npy'
         train_data_path = os.path.join(data_dir, train_data_name)
-        test_data_name = 'test_c' + str(client_index) + '.npy'
+        test_data_name = 'test_c' + str(client_index) + '_' + size + '.npy'
         test_data_path = os.path.join(data_dir, test_data_name)
-        valid_data_name = 'valid_c' + str(client_index) + '.npy'
+        valid_data_name = 'valid_c' + str(client_index) + '_' + size + '.npy'
         valid_data_path = os.path.join(data_dir, valid_data_name)
-        distri_name = 'c' + str(client_index) + '_distribution.txt'
+        distri_name = 'distribution_c' + str(client_index) + '_' + size + '.txt'
         distri_path = os.path.join(data_dir, distri_name)
 
         train_set = np.load(train_data_path, allow_pickle=True)
@@ -132,15 +132,20 @@ class Mnist(DataSource):
 
 if __name__ == "__main__":
     m = Mnist()
-    # (train_set, test_set, valid_set), class_distr = m.fake_non_iid_data(min_train=2000, max_train=3000)
-    # print(class_distr)
-    #
-    # train = np.array(train_set)
-    # test = np.array(test_set)
-    # valid = np.array(valid_set)
-    #
-    # np.save('./dataset_plus/mnist/niid/train_c9.npy', train)
-    # np.save('./dataset_plus/mnist/niid/test_c9.npy', test)
-    # np.save('./dataset_plus/mnist/niid/valid_c9.npy', valid)
-    # np.savetxt('./dataset_plus/mnist/niid/c9_distribution.txt', class_distr)
+    (train_set, test_set, valid_set), class_distr = m.fake_non_iid_data(min_train=10000, max_train=10000)
+
+    train = np.array(train_set)
+    test = np.array(test_set)
+    valid = np.array(valid_set)
+
+    data_dir = 'client_dataset/mnist/iid/'
+    size = '10000'
+    client_index = 4
+
+    np.save('train_c' + str(client_index) + '_' + size + '.npy', train)
+    # 'client_dataset/mnist/iid/train_c1_10000.npy'
+    np.save('test_c' + str(client_index) + '_' + size + '.npy', test)
+    np.save('valid_c' + str(client_index) + '_' + size + '.npy', valid)
+    np.savetxt('distribution_c' + str(client_index) + '_' + size + '.txt', class_distr)
+    print(class_distr)
 
