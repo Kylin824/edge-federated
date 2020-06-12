@@ -129,6 +129,10 @@ class Mnist(DataSource):
 
         return (train_set, test_set, valid_set), class_distr
 
+    def generate_global_valid_dataset(self, size):
+        (train_set, test_set, valid_set), class_distr = m.fake_non_iid_data(min_train=size, max_train=size)
+
+
 
 if __name__ == "__main__":
     m = Mnist()
