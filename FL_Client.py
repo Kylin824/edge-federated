@@ -166,8 +166,8 @@ class FederatedClient(object):
                 # 测试下载的global model在client上的精度
                 test_loss, test_accuracy = self.local_model.evaluate()
                 valid_loss, valid_accuracy = self.local_model.validate()
-
-                print('round: ' + str(round_num) + ' test global acc: ' + str(test_accuracy) + ' valid global acc: ' + str(valid_accuracy))
+                print('round: ' + str(round_num) + ' -> global model on local dataset acc: ' + str(test_accuracy))
+                print('round: ' + str(round_num) + ' -> global model on valid dataset acc: ' + str(valid_accuracy))
 
                 # 训练一轮
                 my_weights, train_loss, train_accuracy = self.local_model.train_one_round()
@@ -187,6 +187,7 @@ class FederatedClient(object):
                     'pred_cu': pred_cu
                 }
                 print("\nsuccessfully update at round: ", req['round_number'])
+
                 if req['run_validation']:
                     valid_loss, valid_accuracy = self.local_model.validate()
                     resp['valid_loss'] = valid_loss
@@ -285,11 +286,16 @@ class FederatedClient(object):
         def on_stop_and_eval(*args):
             req = args[0]
 
+            valid_loss, valid_accuracy = self.local_model.validate()
+            print('final local model on global dataset acc: ' + str(valid_accuracy))
+
+
             if req['weights_format'] == 'pickle':
                 weights = pickle_string_to_obj(req['current_weights'])
 
             self.local_model.set_weights(weights)
             test_loss, test_accuracy = self.local_model.evaluate()
+            print('final global model on local dataset acc: ' + test_accuracy)
 
             resp = {
                 'test_size': self.local_model.x_test.shape[0],

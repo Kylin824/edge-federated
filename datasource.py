@@ -136,20 +136,20 @@ class Mnist(DataSource):
 
 if __name__ == "__main__":
     m = Mnist()
-    (train_set, test_set, valid_set), class_distr = m.fake_non_iid_data(min_train=10000, max_train=10000)
+    (train_set, test_set, valid_set), class_distr = m.fake_non_iid_data(min_train=20000, max_train=20000)
 
     train = np.array(train_set)
     test = np.array(test_set)
     valid = np.array(valid_set)
 
-    data_dir = 'client_dataset/mnist/iid/'
+    data_dir = 'client_dataset/mnist/niid/'
     size = '10000'
-    client_index = 4
+    client_index = 99
 
-    np.save('train_c' + str(client_index) + '_' + size + '.npy', train)
+    np.save(data_dir + 'train_c' + str(client_index) + '_' + size + '.npy', train)
     # 'client_dataset/mnist/iid/train_c1_10000.npy'
-    np.save('test_c' + str(client_index) + '_' + size + '.npy', test)
-    np.save('valid_c' + str(client_index) + '_' + size + '.npy', valid)
+    np.save(data_dir + 'test_c' + str(client_index) + '_' + size + '.npy', test)
+    np.save(data_dir + 'valid_c' + str(client_index) + '_' + size + '.npy', valid)
     np.savetxt('distribution_c' + str(client_index) + '_' + size + '.txt', class_distr)
     print(class_distr)
 
