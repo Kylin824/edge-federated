@@ -85,6 +85,10 @@ class FederatedClient(object):
         self.register_handles()
         self.prev_train_loss = 0
         self.prev_train_acc = 0
+        self.global_model_local_data_acc = []
+        self.global_model_global_data_acc = []
+        self.local_model_local_data_acc = []
+        self.local_model_global_data_acc = []
         print("sent wakeup")  # 通知server
         self.sio.emit('client_wake_up')
         self.sio.wait()
@@ -164,10 +168,13 @@ class FederatedClient(object):
                 self.local_model.set_weights(weights)
 
                 # 测试下载的global model在client上的精度
-                test_loss, test_accuracy = self.local_model.evaluate()
-                valid_loss, valid_accuracy = self.local_model.validate()
-                print('round: ' + str(round_num) + ' -> global model on local dataset acc: ' + str(test_accuracy))
-                print('round: ' + str(round_num) + ' -> global model on valid dataset acc: ' + str(valid_accuracy))
+                test_loss, local_acc = self.local_model.evaluate()
+                valid_loss, global_acc = self.local_model.validate()
+                print('round: ' + str(round_num) + ' -> global model on local dataset acc: ' + str(local_acc))
+                print('round: ' + str(round_num) + ' -> global model on valid dataset acc: ' + str(global_acc))
+
+                self.global_model_local_data_acc.append(local_acc)
+                self.global_model_global_data_acc.append(global_acc)
 
                 # 训练一轮
                 my_weights, train_loss, train_accuracy = self.local_model.train_one_round()
@@ -295,7 +302,22 @@ class FederatedClient(object):
 
             self.local_model.set_weights(weights)
             test_loss, test_accuracy = self.local_model.evaluate()
-            print('final global model on local dataset acc: ' + test_accuracy)
+            print('final global model on local dataset acc: ' + str(test_accuracy))
+
+            print('init result.txt')
+
+            acc_file_dir = 'result/mnist/niid/'
+
+            local_acc_file = acc_file_dir + 'client_' + str(self.index) + '_global_model_local_data_acc.txt'
+            with open(local_acc_file, 'a') as lf:
+                for i in self.global_model_local_data_acc:
+                    lf.write(str(i)+'\n')
+
+            if (self.index == 0):
+                global_acc_file = acc_file_dir + 'global_model_global_data_acc.txt'
+                with open(global_acc_file, 'a') as gf:
+                    for i in self.global_model_global_data_acc:
+                        gf.write(str(i) + '\n')
 
             resp = {
                 'test_size': self.local_model.x_test.shape[0],

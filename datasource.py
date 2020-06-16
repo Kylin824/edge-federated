@@ -18,7 +18,7 @@ class DataSource(object):
 
 class Mnist(DataSource):
 
-    IID = True  # True: generate iid dataset  False: generate non-iid dataset
+    IID = False  # True: generate iid dataset  False: generate non-iid dataset
     MIN_NUM_CLASSES_PER_CLIENT = 3
     MAX_NUM_CLASSES_PER_CLIENT = 3
     
@@ -45,8 +45,8 @@ class Mnist(DataSource):
     def gen_dummy_non_iid_weights(self):
         self.classes = np.array(range(10))
 
-        num_classes_this_client = 3
-        classes_this_client = [4, 5, 7]
+        num_classes_this_client = 10
+        classes_this_client = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
         w = np.array([random.random() for _ in range(num_classes_this_client)])
         weights = np.array([0.] * self.classes.shape[0])
@@ -111,7 +111,7 @@ class Mnist(DataSource):
 
     def load_local_iid_data(self, client_index):
         # client_index = 01234
-        data_dir = 'client_dataset/mnist/iid/'
+        data_dir = 'client_dataset/mnist/niid/'
         size = '10000';
         train_data_name = 'train_c' + str(client_index) + '_' + size + '.npy'
         train_data_path = os.path.join(data_dir, train_data_name)
@@ -136,7 +136,7 @@ class Mnist(DataSource):
 
 if __name__ == "__main__":
     m = Mnist()
-    (train_set, test_set, valid_set), class_distr = m.fake_non_iid_data(min_train=20000, max_train=20000)
+    (train_set, test_set, valid_set), class_distr = m.fake_non_iid_data(min_train=10000, max_train=10000)
 
     train = np.array(train_set)
     test = np.array(test_set)
@@ -144,12 +144,12 @@ if __name__ == "__main__":
 
     data_dir = 'client_dataset/mnist/niid/'
     size = '10000'
-    client_index = 99
+    client_index = 2
 
     np.save(data_dir + 'train_c' + str(client_index) + '_' + size + '.npy', train)
     # 'client_dataset/mnist/iid/train_c1_10000.npy'
     np.save(data_dir + 'test_c' + str(client_index) + '_' + size + '.npy', test)
     np.save(data_dir + 'valid_c' + str(client_index) + '_' + size + '.npy', valid)
-    np.savetxt('distribution_c' + str(client_index) + '_' + size + '.txt', class_distr)
+    np.savetxt(data_dir + 'distribution_c' + str(client_index) + '_' + size + '.txt', class_distr)
     print(class_distr)
 
