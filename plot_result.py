@@ -44,6 +44,8 @@ def plot_raw_result():
     ax2.legend(loc=7)
     plt.show()
 
+def plot_raw_acc():
+    acc_file_path = '/result/mnist/nniid/'
 
 if __name__ == '__main__':
     plot_raw_result()

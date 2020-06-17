@@ -89,6 +89,7 @@ class FederatedClient(object):
         self.global_model_global_data_acc = []
         self.local_model_local_data_acc = []
         self.local_model_global_data_acc = []
+        self.drop_every_round = 3
         print("sent wakeup")  # 通知server
         self.sio.emit('client_wake_up')
         self.sio.wait()
@@ -165,7 +166,7 @@ class FederatedClient(object):
             if req['is_selected'] == 'true':
                 if req['weights_format'] == 'pickle':
                     weights = pickle_string_to_obj(req['current_weights'])
-                self.local_model.set_weights(weights)
+                    self.local_model.set_weights(weights)
 
                 # 测试下载的global model在client上的精度
                 test_loss, local_acc = self.local_model.evaluate()
@@ -176,24 +177,40 @@ class FederatedClient(object):
                 self.global_model_local_data_acc.append(local_acc)
                 self.global_model_global_data_acc.append(global_acc)
 
-                # 训练一轮
-                my_weights, train_loss, train_accuracy = self.local_model.train_one_round()
-                self.prev_train_loss = train_loss
-                self.prev_train_acc = train_accuracy
+                if (self.index == 2 and req['round_number'] % self.drop_every_round == 0):
+                    resp = {
+                        'round_number': req['round_number'],
+                        'weights': req['current_weights'],
+                        'train_size': self.local_model.x_train.shape[0],
+                        'valid_size': self.local_model.x_valid.shape[0],
+                        'train_loss': self.prev_train_loss,
+                        'train_accuracy': self.prev_train_acc,
+                        'current_cq': cur_cq,
+                        'pred_cq': pred_cq,
+                        'current_cu': cur_cu,
+                        'pred_cu': pred_cu
+                    }
+                    print("\nclient drop at round: ", req['round_number'])
 
-                resp = {
-                    'round_number': req['round_number'],
-                    'weights': obj_to_pickle_string(my_weights),
-                    'train_size': self.local_model.x_train.shape[0],
-                    'valid_size': self.local_model.x_valid.shape[0],
-                    'train_loss': train_loss,
-                    'train_accuracy': train_accuracy,
-                    'current_cq': cur_cq,
-                    'pred_cq': pred_cq,
-                    'current_cu': cur_cu,
-                    'pred_cu': pred_cu
-                }
-                print("\nsuccessfully update at round: ", req['round_number'])
+                else:
+                    # 训练一轮
+                    my_weights, train_loss, train_accuracy = self.local_model.train_one_round()
+                    self.prev_train_loss = train_loss
+                    self.prev_train_acc = train_accuracy
+
+                    resp = {
+                        'round_number': req['round_number'],
+                        'weights': obj_to_pickle_string(my_weights),
+                        'train_size': self.local_model.x_train.shape[0],
+                        'valid_size': self.local_model.x_valid.shape[0],
+                        'train_loss': train_loss,
+                        'train_accuracy': train_accuracy,
+                        'current_cq': cur_cq,
+                        'pred_cq': pred_cq,
+                        'current_cu': cur_cu,
+                        'pred_cu': pred_cu
+                    }
+                    print("\nsuccessfully update at round: ", req['round_number'])
 
                 if req['run_validation']:
                     valid_loss, valid_accuracy = self.local_model.validate()
@@ -306,7 +323,7 @@ class FederatedClient(object):
 
             print('init result.txt')
 
-            acc_file_dir = 'result/mnist/niid/'
+            acc_file_dir = 'result/mnist/nniid/'
 
             local_acc_file = acc_file_dir + 'client_' + str(self.index) + '_global_model_local_data_acc.txt'
             with open(local_acc_file, 'a') as lf:
@@ -341,7 +358,7 @@ class FederatedClient(object):
 
 
 if __name__ == "__main__":
-    FederatedClient("127.0.0.1", 5000, datasource.Mnist, 2)
+    FederatedClient("127.0.0.1", 5000, datasource.Mnist, 0)
     # FederatedClient("127.0.0.1", 5000, datasource.CIFAR, 2)
 
 

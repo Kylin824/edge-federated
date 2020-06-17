@@ -45,8 +45,8 @@ class Mnist(DataSource):
     def gen_dummy_non_iid_weights(self):
         self.classes = np.array(range(10))
 
-        num_classes_this_client = 10
-        classes_this_client = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        num_classes_this_client = 3
+        classes_this_client = [7, 8, 9]
 
         w = np.array([random.random() for _ in range(num_classes_this_client)])
         weights = np.array([0.] * self.classes.shape[0])
@@ -111,8 +111,8 @@ class Mnist(DataSource):
 
     def load_local_iid_data(self, client_index):
         # client_index = 01234
-        data_dir = 'client_dataset/mnist/niid/'
-        size = '10000';
+        data_dir = 'client_dataset/mnist/nniid/'
+        size = '10000'
         train_data_name = 'train_c' + str(client_index) + '_' + size + '.npy'
         train_data_path = os.path.join(data_dir, train_data_name)
         test_data_name = 'test_c' + str(client_index) + '_' + size + '.npy'
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     test = np.array(test_set)
     valid = np.array(valid_set)
 
-    data_dir = 'client_dataset/mnist/niid/'
+    data_dir = 'client_dataset/mnist/nniid/'
     size = '10000'
     client_index = 2
 

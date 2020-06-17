@@ -64,6 +64,7 @@ class GlobalModel(object):
         self.train_accuracies += [[cur_round, cur_time, aggr_accuraries, update_num]]
         with open('stats.txt', 'w') as outfile:
             json.dump(self.get_stats(), outfile)
+            print('txt aggregate_train_loss_accuracy')
         return aggr_loss, aggr_accuraries
 
     # cur_round coule be None
@@ -74,6 +75,7 @@ class GlobalModel(object):
         self.valid_accuracies += [[cur_round, cur_time, aggr_accuraries, update_num]]
         with open('stats.txt', 'w') as outfile:
             json.dump(self.get_stats(), outfile)
+            print('txt aggregate_valid_loss_accuracy')
         return aggr_loss, aggr_accuraries
 
     def get_stats(self):
@@ -111,7 +113,7 @@ class GlobalModel_MNIST_CNN(GlobalModel):
 ######## Flask server with Socket IO ########
 class FLServer(object):
     MIN_NUM_WORKERS = 3  # 超过多少个即可开始本轮训练
-    MAX_NUM_ROUNDS = 10  # 最大轮次
+    MAX_NUM_ROUNDS = 50  # 最大轮次
     NUM_CLIENTS_CONTACTED_PER_ROUND = 3  # 每轮选多少个设备
     ROUNDS_BETWEEN_VALIDATIONS = 3
 
