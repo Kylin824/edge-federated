@@ -64,7 +64,6 @@ class GlobalModel(object):
         self.train_accuracies += [[cur_round, cur_time, aggr_accuraries, update_num]]
         with open('stats.txt', 'w') as outfile:
             json.dump(self.get_stats(), outfile)
-            print('txt aggregate_train_loss_accuracy')
         return aggr_loss, aggr_accuraries
 
     # cur_round coule be None
@@ -75,7 +74,6 @@ class GlobalModel(object):
         self.valid_accuracies += [[cur_round, cur_time, aggr_accuraries, update_num]]
         with open('stats.txt', 'w') as outfile:
             json.dump(self.get_stats(), outfile)
-            print('txt aggregate_valid_loss_accuracy')
         return aggr_loss, aggr_accuraries
 
     def get_stats(self):

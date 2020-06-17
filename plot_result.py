@@ -47,23 +47,34 @@ def plot_raw_result():
 
 def plot_raw_acc():
     nniid_50round_all_result = './result/mnist/nniid/50round_all/global_model_global_data_acc.txt'
-    nniid_50round_drop_result = './result/mnist/nniid/50round_drop3/global_model_global_data_acc.txt'
+    nniid_50round_drop3_result = './result/mnist/nniid/50round_drop3/global_model_global_data_acc.txt'
 
     iid_50round_all_result = './result/mnist/iid/50round_all/global_model_global_data_acc.txt'
+    iid_50round_drop3_result = './result/mnist/iid/50round_drop3/global_model_global_data_acc.txt'
+
     niid_50round_all_result = './result/mnist/niid/50round_all/global_model_global_data_acc.txt'
+    niid_50round_drop3_result = './result/mnist/niid/50round_drop3/global_model_global_data_acc.txt'
 
 
     nniid_50round_all_acc = np.loadtxt(nniid_50round_all_result)
-    nniid_50round_drop3_acc = np.loadtxt(nniid_50round_drop_result)
+    nniid_50round_drop3_acc = np.loadtxt(nniid_50round_drop3_result)
+
     iid_50round_all_acc = np.loadtxt(iid_50round_all_result)
+    iid_50round_drop3_acc = np.loadtxt(iid_50round_drop3_result)
+
     niid_50round_all_acc = np.loadtxt(niid_50round_all_result)
+    niid_50round_drop3_acc = np.loadtxt(niid_50round_drop3_result)
 
     x = np.arange(len(nniid_50round_all_acc))
 
-    plt.plot(x, nniid_50round_all_acc, color='r', label='nniid_all_acc')
-    plt.plot(x, nniid_50round_drop3_acc, color='b', label='nniid_drop3_acc')
-    plt.plot(x, iid_50round_all_acc, color='y', label='iid_all_acc')
-    plt.plot(x, niid_50round_all_acc, color='g', label='niid_all_acc')
+
+    plt.plot(x, iid_50round_all_acc, label='iid_all_acc')
+    plt.plot(x, iid_50round_drop3_acc, label='iid_drop3_acc')
+    plt.plot(x, niid_50round_all_acc, label='niid_all_acc')
+    plt.plot(x, niid_50round_drop3_acc, label='niid_drop3_acc')
+    plt.plot(x, nniid_50round_all_acc, label='nniid_all_acc')
+    plt.plot(x, nniid_50round_drop3_acc, label='nniid_drop3_acc')
+    plt.ylim(0.9, 1)
     plt.ylabel('Accuracy')
     plt.xlabel('round')
     plt.legend()
