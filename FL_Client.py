@@ -177,7 +177,7 @@ class FederatedClient(object):
                 self.global_model_local_data_acc.append(local_acc)
                 self.global_model_global_data_acc.append(global_acc)
 
-                if (self.index == 2 and req['round_number'] % self.drop_every_round == 0):
+                if (self.index == 4 and req['round_number'] % self.drop_every_round == 0):
                     resp = {
                         'round_number': req['round_number'],
                         'weights': req['current_weights'],
@@ -323,7 +323,7 @@ class FederatedClient(object):
 
             print('init result.txt')
 
-            acc_file_dir = 'result/mnist/nniid/'
+            acc_file_dir = 'result/mnist/iid/'
 
             local_acc_file = acc_file_dir + 'client_' + str(self.index) + '_global_model_local_data_acc.txt'
             with open(local_acc_file, 'a') as lf:

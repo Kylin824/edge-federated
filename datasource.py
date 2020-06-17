@@ -111,7 +111,7 @@ class Mnist(DataSource):
 
     def load_local_iid_data(self, client_index):
         # client_index = 01234
-        data_dir = 'client_dataset/mnist/nniid/'
+        data_dir = 'client_dataset/mnist/iid/'
         size = '10000'
         train_data_name = 'train_c' + str(client_index) + '_' + size + '.npy'
         train_data_path = os.path.join(data_dir, train_data_name)
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     test = np.array(test_set)
     valid = np.array(valid_set)
 
-    data_dir = 'client_dataset/mnist/nniid/'
+    data_dir = 'client_dataset/mnist/iid/'
     size = '10000'
     client_index = 2
 

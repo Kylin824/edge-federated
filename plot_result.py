@@ -1,5 +1,6 @@
 import json
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def plot_raw_result():
@@ -26,7 +27,6 @@ def plot_raw_result():
         x.append(r[0])
         t_acc.append(r[2])
 
-
     for v in valid_accuracy:
         y.append(v[0])
         v_acc.append(v[2])
@@ -44,10 +44,32 @@ def plot_raw_result():
     ax2.legend(loc=7)
     plt.show()
 
+
 def plot_raw_acc():
-    acc_file_path = '/result/mnist/nniid/'
+    nniid_50round_all_result = './result/mnist/nniid/50round_all/global_model_global_data_acc.txt'
+    nniid_50round_drop_result = './result/mnist/nniid/50round_drop3/global_model_global_data_acc.txt'
+
+    iid_50round_all_result = './result/mnist/iid/50round_all/global_model_global_data_acc.txt'
+    niid_50round_all_result = './result/mnist/niid/50round_all/global_model_global_data_acc.txt'
+
+
+    nniid_50round_all_acc = np.loadtxt(nniid_50round_all_result)
+    nniid_50round_drop3_acc = np.loadtxt(nniid_50round_drop_result)
+    iid_50round_all_acc = np.loadtxt(iid_50round_all_result)
+    niid_50round_all_acc = np.loadtxt(niid_50round_all_result)
+
+    x = np.arange(len(nniid_50round_all_acc))
+
+    plt.plot(x, nniid_50round_all_acc, color='r', label='nniid_all_acc')
+    plt.plot(x, nniid_50round_drop3_acc, color='b', label='nniid_drop3_acc')
+    plt.plot(x, iid_50round_all_acc, color='y', label='iid_all_acc')
+    plt.plot(x, niid_50round_all_acc, color='g', label='niid_all_acc')
+    plt.ylabel('Accuracy')
+    plt.xlabel('round')
+    plt.legend()
+    plt.show()
+
 
 if __name__ == '__main__':
-    plot_raw_result()
-
-
+    # plot_raw_result()
+    plot_raw_acc()
