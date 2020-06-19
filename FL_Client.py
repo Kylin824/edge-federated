@@ -8,6 +8,7 @@ from FL_Server import obj_to_pickle_string, pickle_string_to_obj
 import datasource
 import os
 import pandas as pd
+import random
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
@@ -118,6 +119,8 @@ class FederatedClient(object):
         print('done load local client_dataset')
         print(my_class_distr)
 
+        random.seed(self.index)
+
         # load 本地的数据集
         self.local_model = LocalModel(model_config, fake_data)
 
@@ -177,7 +180,10 @@ class FederatedClient(object):
                 self.global_model_local_data_acc.append(local_acc)
                 self.global_model_global_data_acc.append(global_acc)
 
-                if (self.index == 2 and req['round_number'] % self.drop_every_round == 0):
+                property = random.random()
+
+                # if (self.index == 2 and req['round_number'] % self.drop_every_round == 0):
+                if (property >= 0.7):
                     resp = {
                         'round_number': req['round_number'],
                         'weights': req['current_weights'],
@@ -191,6 +197,7 @@ class FederatedClient(object):
                         'pred_cu': pred_cu
                     }
                     print("\nclient drop at round: ", req['round_number'])
+                    print(" random: ", property)
 
                 else:
                     # 训练一轮
@@ -323,7 +330,7 @@ class FederatedClient(object):
 
             print('init result.txt')
 
-            acc_file_dir = 'result/mnist/nniid/'
+            acc_file_dir = 'result/mnist/niid/'
 
             local_acc_file = acc_file_dir + 'client_' + str(self.index) + '_global_model_local_data_acc.txt'
             with open(local_acc_file, 'a') as lf:
@@ -358,7 +365,7 @@ class FederatedClient(object):
 
 
 if __name__ == "__main__":
-    FederatedClient("127.0.0.1", 5000, datasource.Mnist, 0)
+    FederatedClient("127.0.0.1", 5000, datasource.Mnist, 2)
     # FederatedClient("127.0.0.1", 5000, datasource.CIFAR, 2)
 
 

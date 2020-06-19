@@ -1,10 +1,12 @@
 import json
+import random
+
 import matplotlib.pyplot as plt
 import numpy as np
 
 
 def plot_raw_result():
-    result_path = 'stats.txt'
+    result_path = 'stats/niid_50round_pro07.txt'
 
     with open(result_path, 'r') as outfile:
         data = json.load(outfile)
@@ -51,9 +53,21 @@ def plot_raw_acc():
     c1_nniid_50round_drop3_result = './result/mnist/nniid/50round_drop3/client_1_global_model_local_data_acc.txt'
     c2_nniid_50round_drop3_result = './result/mnist/nniid/50round_drop3/client_2_global_model_local_data_acc.txt'
 
+    c0_nniid_50round_pro08_result = './result/mnist/nniid/50round_pro08/client_0_global_model_local_data_acc.txt'
+    c1_nniid_50round_pro08_result = './result/mnist/nniid/50round_pro08/client_1_global_model_local_data_acc.txt'
+    c2_nniid_50round_pro08_result = './result/mnist/nniid/50round_pro08/client_2_global_model_local_data_acc.txt'
+
+    c0_nniid_50round_pro09_result = './result/mnist/nniid/50round_pro09/client_0_global_model_local_data_acc.txt'
+    c1_nniid_50round_pro09_result = './result/mnist/nniid/50round_pro09/client_1_global_model_local_data_acc.txt'
+    c2_nniid_50round_pro09_result = './result/mnist/nniid/50round_pro09/client_2_global_model_local_data_acc.txt'
+
     nniid_50round_all_result = './result/mnist/nniid/50round_all/global_model_global_data_acc.txt'
     nniid_50round_drop3_result = './result/mnist/nniid/50round_drop3/global_model_global_data_acc.txt'
     nniid_50round_drop5_result = './result/mnist/nniid/50round_drop5/global_model_global_data_acc.txt'
+
+    nniid_50round_pro08_result = './result/mnist/nniid/50round_pro08/global_model_global_data_acc.txt'
+    nniid_50round_pro09_result = './result/mnist/nniid/50round_pro09/global_model_global_data_acc.txt'
+    nniid_50round_pro07_result = './result/mnist/nniid/50round_pro07/global_model_global_data_acc.txt'
 
     iid_50round_all_result = './result/mnist/iid/50round_all/global_model_global_data_acc.txt'
     iid_50round_drop3_result = './result/mnist/iid/50round_drop3/global_model_global_data_acc.txt'
@@ -61,20 +75,34 @@ def plot_raw_acc():
     niid_50round_all_result = './result/mnist/niid/50round_all/global_model_global_data_acc.txt'
     niid_50round_drop3_result = './result/mnist/niid/50round_drop3/global_model_global_data_acc.txt'
 
+    niid_50round_pro07_result = './result/mnist/niid/50round_pro07/global_model_global_data_acc.txt'
+
+    c0_nniid_50round_pro08_acc = np.loadtxt(c0_nniid_50round_pro08_result)
+    c1_nniid_50round_pro08_acc = np.loadtxt(c1_nniid_50round_pro08_result)
+    c2_nniid_50round_pro08_acc = np.loadtxt(c2_nniid_50round_pro08_result)
+
+    c0_nniid_50round_pro09_acc = np.loadtxt(c0_nniid_50round_pro09_result)
+    c1_nniid_50round_pro09_acc = np.loadtxt(c1_nniid_50round_pro09_result)
+    c2_nniid_50round_pro09_acc = np.loadtxt(c2_nniid_50round_pro09_result)
+
     c0_nniid_50round_drop3_acc = np.loadtxt(c0_nniid_50round_drop3_result)
     c1_nniid_50round_drop3_acc = np.loadtxt(c1_nniid_50round_drop3_result)
     c2_nniid_50round_drop3_acc = np.loadtxt(c2_nniid_50round_drop3_result)
 
-
     nniid_50round_all_acc = np.loadtxt(nniid_50round_all_result)
     nniid_50round_drop3_acc = np.loadtxt(nniid_50round_drop3_result)
     nniid_50round_drop5_acc = np.loadtxt(nniid_50round_drop5_result)
+
+    nniid_50round_pro08_acc = np.loadtxt(nniid_50round_pro08_result)
+    nniid_50round_pro09_acc = np.loadtxt(nniid_50round_pro09_result)
+    nniid_50round_pro07_acc = np.loadtxt(nniid_50round_pro07_result)
 
     iid_50round_all_acc = np.loadtxt(iid_50round_all_result)
     iid_50round_drop3_acc = np.loadtxt(iid_50round_drop3_result)
 
     niid_50round_all_acc = np.loadtxt(niid_50round_all_result)
     niid_50round_drop3_acc = np.loadtxt(niid_50round_drop3_result)
+    niid_50round_pro07_acc = np.loadtxt(niid_50round_pro07_result)
 
     x = np.arange(len(nniid_50round_all_acc))
 
@@ -83,13 +111,29 @@ def plot_raw_acc():
     # plt.plot(x, iid_50round_drop3_acc, label='iid_drop3_acc')
     # plt.plot(x, niid_50round_all_acc, label='niid_all_acc')
     # plt.plot(x, niid_50round_drop3_acc, label='niid_drop3_acc')
+    # plt.plot(x, niid_50round_pro07_acc, label='niid_pro07_acc')
+
     plt.plot(x, nniid_50round_all_acc, label='nniid_all_alive_acc')
-    plt.plot(x, nniid_50round_drop3_acc, label='nniid_drop3_acc')
+    # plt.plot(x, nniid_50round_drop3_acc, label='nniid_drop3_acc')
+    # plt.plot(x, nniid_50round_pro08_acc, label='nniid_pro08_acc')
+    plt.plot(x, nniid_50round_pro09_acc, label='nniid_pro09_acc')
+    plt.plot(x, nniid_50round_pro07_acc, label='nniid_pro07_acc')
+
     # plt.plot(x, nniid_50round_drop5_acc, label='nniid_drop5_acc')
-    plt.plot(x, c0_nniid_50round_drop3_acc, label='c0_nniid_drop3_acc')
-    plt.plot(x, c1_nniid_50round_drop3_acc, label='c1_nniid_drop3_acc')
-    plt.plot(x, c2_nniid_50round_drop3_acc, label='c2_nniid_drop3_acc')
-    plt.ylim(0, 1)
+
+    # plt.plot(x, c0_nniid_50round_pro08_acc, label='c0_nniid_pro08_acc')
+    # plt.plot(x, c1_nniid_50round_pro08_acc, label='c1_nniid_pro08_acc')
+    # plt.plot(x, c2_nniid_50round_pro08_acc, label='c2_nniid_pro08_acc')
+    #
+    # plt.plot(x, c0_nniid_50round_pro09_acc, label='c0_nniid_pro09_acc')
+    # plt.plot(x, c1_nniid_50round_pro09_acc, label='c1_nniid_pro09_acc')
+    # plt.plot(x, c2_nniid_50round_pro09_acc, label='c2_nniid_pro09_acc')
+
+    # plt.plot(x, c0_nniid_50round_drop3_acc, label='c0_nniid_drop3_acc')
+    # plt.plot(x, c1_nniid_50round_drop3_acc, label='c1_nniid_drop3_acc')
+    # plt.plot(x, c2_nniid_50round_drop3_acc, label='c2_nniid_drop3_acc')
+
+    plt.ylim(0.4, 1)
     plt.ylabel('Accuracy')
     plt.xlabel('round')
     plt.legend()
@@ -99,3 +143,5 @@ def plot_raw_acc():
 if __name__ == '__main__':
     # plot_raw_result()
     plot_raw_acc()
+
+
