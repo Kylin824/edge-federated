@@ -330,7 +330,7 @@ class FederatedClient(object):
 
             print('init result.txt')
 
-            acc_file_dir = 'result/mnist/niid/'
+            acc_file_dir = 'result/mnist/nniid/'
 
             local_acc_file = acc_file_dir + 'client_' + str(self.index) + '_global_model_local_data_acc.txt'
             with open(local_acc_file, 'a') as lf:
