@@ -68,6 +68,8 @@ def plot_raw_acc():
     nniid_50round_pro08_result = './result/mnist/nniid/50round_pro08/global_model_global_data_acc.txt'
     nniid_50round_pro09_result = './result/mnist/nniid/50round_pro09/global_model_global_data_acc.txt'
     nniid_50round_pro07_result = './result/mnist/nniid/50round_pro07/global_model_global_data_acc.txt'
+    final_nniid_50round_pro07_result = './result/mnist/nniid/final_pro07/global_model_global_data_acc.txt'
+    final_nniid_50round_pro09_result = './result/mnist/nniid/final_pro09/global_model_global_data_acc.txt'
 
     iid_50round_all_result = './result/mnist/iid/50round_all/global_model_global_data_acc.txt'
     iid_50round_drop3_result = './result/mnist/iid/50round_drop3/global_model_global_data_acc.txt'
@@ -96,6 +98,8 @@ def plot_raw_acc():
     nniid_50round_pro08_acc = np.loadtxt(nniid_50round_pro08_result)
     nniid_50round_pro09_acc = np.loadtxt(nniid_50round_pro09_result)
     nniid_50round_pro07_acc = np.loadtxt(nniid_50round_pro07_result)
+    final_nniid_50round_pro07_acc = np.loadtxt(final_nniid_50round_pro07_result)
+    final_nniid_50round_pro09_acc = np.loadtxt(final_nniid_50round_pro09_result)
 
     iid_50round_all_acc = np.loadtxt(iid_50round_all_result)
     iid_50round_drop3_acc = np.loadtxt(iid_50round_drop3_result)
@@ -108,16 +112,19 @@ def plot_raw_acc():
 
 
     # plt.plot(x, iid_50round_all_acc, label='iid_all_acc')
+    plt.plot(x, iid_50round_all_acc, label='tpu_iid_all_acc')
     # plt.plot(x, iid_50round_drop3_acc, label='iid_drop3_acc')
     # plt.plot(x, niid_50round_all_acc, label='niid_all_acc')
     # plt.plot(x, niid_50round_drop3_acc, label='niid_drop3_acc')
     # plt.plot(x, niid_50round_pro07_acc, label='niid_pro07_acc')
 
-    plt.plot(x, nniid_50round_all_acc, label='nniid_all_alive_acc')
+    plt.plot(x, nniid_50round_all_acc, label='tpu_non-iid_all_alive_acc')
     # plt.plot(x, nniid_50round_drop3_acc, label='nniid_drop3_acc')
     # plt.plot(x, nniid_50round_pro08_acc, label='nniid_pro08_acc')
-    plt.plot(x, nniid_50round_pro09_acc, label='nniid_pro09_acc')
-    plt.plot(x, nniid_50round_pro07_acc, label='nniid_pro07_acc')
+    # plt.plot(x, nniid_50round_pro09_acc, label='nniid_pro_09_acc')
+    # plt.plot(x, nniid_50round_pro07_acc, label='nniid_pro07_acc')
+    plt.plot(x, final_nniid_50round_pro07_acc, label='tpu_non-iid_probability_07_acc')
+    plt.plot(x, final_nniid_50round_pro09_acc, label='tpu_non-iid_probability_09_acc')
 
     # plt.plot(x, nniid_50round_drop5_acc, label='nniid_drop5_acc')
 
