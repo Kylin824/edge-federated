@@ -61,6 +61,12 @@ def plot_raw_acc():
     c1_nniid_50round_pro09_result = './result/mnist/nniid/50round_pro09/client_1_global_model_local_data_acc.txt'
     c2_nniid_50round_pro09_result = './result/mnist/nniid/50round_pro09/client_2_global_model_local_data_acc.txt'
 
+    final_c0_iid_50round_all_result = './result/mnist/iid/50round_all/client_0_global_model_local_data_acc.txt'
+    final_c0_nniid_50round_all_result = './result/mnist/nniid/50round_all/client_0_global_model_local_data_acc.txt'
+    final_c0_nniid_50round_pro09_result = './result/mnist/nniid/final_pro09/client_0_global_model_local_data_acc.txt'
+    final_c0_nniid_50round_pro07_result = './result/mnist/nniid/final_pro07/client_0_global_model_local_data_acc.txt'
+
+
     nniid_50round_all_result = './result/mnist/nniid/50round_all/global_model_global_data_acc.txt'
     nniid_50round_drop3_result = './result/mnist/nniid/50round_drop3/global_model_global_data_acc.txt'
     nniid_50round_drop5_result = './result/mnist/nniid/50round_drop5/global_model_global_data_acc.txt'
@@ -91,6 +97,11 @@ def plot_raw_acc():
     c1_nniid_50round_drop3_acc = np.loadtxt(c1_nniid_50round_drop3_result)
     c2_nniid_50round_drop3_acc = np.loadtxt(c2_nniid_50round_drop3_result)
 
+    final_c0_nniid_50round_all_acc = np.loadtxt(final_c0_nniid_50round_all_result)
+    final_c0_nniid_50round_pro07_acc = np.loadtxt(final_c0_nniid_50round_pro07_result)
+    final_c0_nniid_50round_pro09_acc = np.loadtxt(final_c0_nniid_50round_pro09_result)
+    final_c0_iid_50round_pro09_acc = np.loadtxt(final_c0_iid_50round_all_result)
+
     nniid_50round_all_acc = np.loadtxt(nniid_50round_all_result)
     nniid_50round_drop3_acc = np.loadtxt(nniid_50round_drop3_result)
     nniid_50round_drop5_acc = np.loadtxt(nniid_50round_drop5_result)
@@ -112,19 +123,19 @@ def plot_raw_acc():
 
 
     # plt.plot(x, iid_50round_all_acc, label='iid_all_acc')
-    plt.plot(x, iid_50round_all_acc, label='tpu_iid_all_acc')
+    # plt.plot(x, iid_50round_all_acc, label='tpu_iid_all_acc')
     # plt.plot(x, iid_50round_drop3_acc, label='iid_drop3_acc')
     # plt.plot(x, niid_50round_all_acc, label='niid_all_acc')
     # plt.plot(x, niid_50round_drop3_acc, label='niid_drop3_acc')
     # plt.plot(x, niid_50round_pro07_acc, label='niid_pro07_acc')
 
-    plt.plot(x, nniid_50round_all_acc, label='tpu_non-iid_all_alive_acc')
+    # plt.plot(x, nniid_50round_all_acc, label='tpu_non-iid_all_alive_acc')
     # plt.plot(x, nniid_50round_drop3_acc, label='nniid_drop3_acc')
     # plt.plot(x, nniid_50round_pro08_acc, label='nniid_pro08_acc')
     # plt.plot(x, nniid_50round_pro09_acc, label='nniid_pro_09_acc')
     # plt.plot(x, nniid_50round_pro07_acc, label='nniid_pro07_acc')
-    plt.plot(x, final_nniid_50round_pro07_acc, label='tpu_non-iid_probability_07_acc')
-    plt.plot(x, final_nniid_50round_pro09_acc, label='tpu_non-iid_probability_09_acc')
+    # plt.plot(x, final_nniid_50round_pro07_acc, label='tpu_non-iid_probability_07_acc')
+    # plt.plot(x, final_nniid_50round_pro09_acc, label='tpu_non-iid_probability_09_acc')
 
     # plt.plot(x, nniid_50round_drop5_acc, label='nniid_drop5_acc')
 
@@ -140,7 +151,13 @@ def plot_raw_acc():
     # plt.plot(x, c1_nniid_50round_drop3_acc, label='c1_nniid_drop3_acc')
     # plt.plot(x, c2_nniid_50round_drop3_acc, label='c2_nniid_drop3_acc')
 
-    plt.ylim(0.4, 1)
+    plt.plot(x, final_c0_iid_50round_pro09_acc, label='client_iid_alive_acc')
+    plt.plot(x, final_c0_nniid_50round_all_acc, label='client_nniid_alive_acc')
+    plt.plot(x, final_c0_nniid_50round_pro09_acc, label='client_nniid_probability_09_acc')
+    plt.plot(x, final_c0_nniid_50round_pro07_acc, label='client_nniid_probability_07_acc')
+
+    # plt.ylim(0.4, 1)
+    plt.ylim(0, 1)
     plt.ylabel('Accuracy')
     plt.xlabel('round')
     plt.legend()
