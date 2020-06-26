@@ -49,6 +49,9 @@ def plot_raw_result():
 
 def plot_raw_acc():
 
+    # plt.rcParams['font.sans-serif'] = 'Times New Roman'
+    # plt.rcParams['figure.figsize'] = (5.6, 3.5)
+
     c0_nniid_50round_drop3_result = './result/mnist/nniid/50round_drop3/client_0_global_model_local_data_acc.txt'
     c1_nniid_50round_drop3_result = './result/mnist/nniid/50round_drop3/client_1_global_model_local_data_acc.txt'
     c2_nniid_50round_drop3_result = './result/mnist/nniid/50round_drop3/client_2_global_model_local_data_acc.txt'
@@ -122,20 +125,20 @@ def plot_raw_acc():
     x = np.arange(len(nniid_50round_all_acc))
 
 
-    # plt.plot(x, iid_50round_all_acc, label='iid_all_acc')
+    plt.plot(x, iid_50round_all_acc, '-', linewidth='1.5', label='iid_all_acc')
     # plt.plot(x, iid_50round_all_acc, label='tpu_iid_all_acc')
     # plt.plot(x, iid_50round_drop3_acc, label='iid_drop3_acc')
     # plt.plot(x, niid_50round_all_acc, label='niid_all_acc')
     # plt.plot(x, niid_50round_drop3_acc, label='niid_drop3_acc')
     # plt.plot(x, niid_50round_pro07_acc, label='niid_pro07_acc')
 
-    # plt.plot(x, nniid_50round_all_acc, label='tpu_non-iid_all_alive_acc')
+    plt.plot(x, nniid_50round_all_acc, '-', linewidth='1.5', label='tpu_non-iid_all_alive_acc')
     # plt.plot(x, nniid_50round_drop3_acc, label='nniid_drop3_acc')
     # plt.plot(x, nniid_50round_pro08_acc, label='nniid_pro08_acc')
     # plt.plot(x, nniid_50round_pro09_acc, label='nniid_pro_09_acc')
     # plt.plot(x, nniid_50round_pro07_acc, label='nniid_pro07_acc')
-    # plt.plot(x, final_nniid_50round_pro07_acc, label='tpu_non-iid_probability_07_acc')
-    # plt.plot(x, final_nniid_50round_pro09_acc, label='tpu_non-iid_probability_09_acc')
+    plt.plot(x, final_nniid_50round_pro07_acc, '-', linewidth='1.5', label='tpu_non-iid_probability_07_acc')
+    plt.plot(x, final_nniid_50round_pro09_acc, '-', linewidth='1.5', label='tpu_non-iid_probability_09_acc')
 
     # plt.plot(x, nniid_50round_drop5_acc, label='nniid_drop5_acc')
 
@@ -151,16 +154,21 @@ def plot_raw_acc():
     # plt.plot(x, c1_nniid_50round_drop3_acc, label='c1_nniid_drop3_acc')
     # plt.plot(x, c2_nniid_50round_drop3_acc, label='c2_nniid_drop3_acc')
 
-    plt.plot(x, final_c0_iid_50round_pro09_acc, label='client_iid_alive_acc')
-    plt.plot(x, final_c0_nniid_50round_all_acc, label='client_nniid_alive_acc')
-    plt.plot(x, final_c0_nniid_50round_pro09_acc, label='client_nniid_probability_09_acc')
-    plt.plot(x, final_c0_nniid_50round_pro07_acc, label='client_nniid_probability_07_acc')
+    # plt.plot(x, final_c0_iid_50round_pro09_acc, '-', linewidth='1.5', label='client_iid_alive_acc')
+    # plt.plot(x, final_c0_nniid_50round_all_acc, '-', linewidth='1.5', label='client_nniid_alive_acc')
+    # plt.plot(x, final_c0_nniid_50round_pro09_acc, '-', linewidth='1.5', label='client_nniid_probability_09_acc')
+    # plt.plot(x, final_c0_nniid_50round_pro07_acc, '-', linewidth='1.5', label='client_nniid_probability_07_acc')
 
-    # plt.ylim(0.4, 1)
-    plt.ylim(0, 1)
+    plt.ylim(0.4, 1)
+    # plt.ylim(0, 1)
+    # plt.ylabel('Accuracy', fontdict={'size': 16})
     plt.ylabel('Accuracy')
-    plt.xlabel('round')
+    # plt.xlabel('Round', fontdict={'size': 16})
+    plt.xlabel('Round')
+    # leg = plt.legend(fontsize=15)
     plt.legend()
+    # plt.tick_params(labelsize=12)
+
     plt.show()
 
 
