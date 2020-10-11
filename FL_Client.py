@@ -1,7 +1,5 @@
 import numpy as np
 import keras
-import random
-import time
 from keras.models import model_from_json
 from socketIO_client import SocketIO, LoggingNamespace
 from FL_Server import obj_to_pickle_string, pickle_string_to_obj
@@ -9,14 +7,16 @@ import datasource
 import os
 import pandas as pd
 import random
+import sys
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 class LocalModel(object):
-    def __init__(self, model_config, data_collected):
-        self.model_config = model_config
 
+    def __init__(self, model_config, data_collected):
+
+        self.model_config = model_config
         self.model = model_from_json(model_config['model_json'])
 
         # MNIST
@@ -40,7 +40,6 @@ class LocalModel(object):
     def set_weights(self, new_weights):
         self.model.set_weights(new_weights)
 
-    # return final weights, train loss, train accuracy
     def train_one_round(self):
 
         # mnist
@@ -56,11 +55,13 @@ class LocalModel(object):
                        validation_data=(self.x_valid, self.y_valid))
 
         score = self.model.evaluate(self.x_train, self.y_train, verbose=0)
+
+        # new weights, train loss, train accuracy
         return self.model.get_weights(), score[0], score[1]
 
     def validate(self):
         score = self.model.evaluate(self.x_valid, self.y_valid, verbose=0)
-        # print('Validate loss:', score[0])
+        print('Validate loss:', score[0])
         print('Validate accuracy:', score[1])
         return score
 
@@ -87,11 +88,13 @@ class FederatedClient(object):
         self.prev_train_loss = 0
         self.prev_train_acc = 0
         self.global_model_local_data_acc = []
-        self.global_model_global_data_acc = []
-        self.local_model_local_data_acc = []
-        self.local_model_global_data_acc = []
+        self.global_model_local_data_loss = []
+        self.global_model_common_data_acc = []
+        self.global_model_common_data_loss = []
+        # self.local_model_local_data_acc = []
+        # self.local_model_global_data_acc = []
         self.drop_every_round = 5
-        print("sent wakeup")  # 通知server
+        # print("sent wakeup")  # 通知server
         self.sio.emit('client_wake_up')
         self.sio.wait()
 
@@ -104,7 +107,7 @@ class FederatedClient(object):
         pred_cu = str(self.state_transition[round_num][4*client_index+3])
         return cur_cq, pred_cq, cur_cu, pred_cu
 
-    def get_real_state(self, client_index, round_num):
+    def get_real_next_state(self, client_index, round_num):
         next_cq = str(self.real_state[round_num][2*client_index])
         next_cu = str(self.real_state[round_num][2*client_index+1])
         return next_cq, next_cu
@@ -117,11 +120,11 @@ class FederatedClient(object):
         fake_data, my_class_distr = self.datasource.load_local_iid_data(model_config['client_index'])
 
         print('done load local client_dataset')
-        print(my_class_distr)
+        print('dataset distribution: ', my_class_distr)
 
         random.seed(self.index)
 
-        # load 本地的数据集
+        # 解析全局模型参数，构造本地模型
         self.local_model = LocalModel(model_config, fake_data)
 
         cur_cq, pred_cq, cur_cu, pred_cu = self.get_pred_state(round_num=0, client_index=self.index)
@@ -159,84 +162,49 @@ class FederatedClient(object):
             round_num = req['round_number'] % 199
 
             cur_cq, pred_cq, cur_cu, pred_cu = self.get_pred_state(round_num=round_num, client_index=self.index)
-            next_cq, next_cu = self.get_real_state(round_num=round_num, client_index=self.index)
+            
+            next_cq, next_cu = self.get_real_next_state(round_num=round_num, client_index=self.index)
 
             total_cq = int(cur_cq) + int(next_cq)
             total_cu = int(cur_cu) + int(next_cu)
 
             cur_cq, pred_cq, cur_cu, pred_cu = self.get_pred_state(round_num=round_num+1, client_index=self.index)
 
-            if req['is_selected'] == 'true':
-                if req['weights_format'] == 'pickle':
-                    weights = pickle_string_to_obj(req['current_weights'])
-                    self.local_model.set_weights(weights)
-
-                # 测试下载的global model在client上的精度
-                test_loss, local_acc = self.local_model.evaluate()
-                valid_loss, global_acc = self.local_model.validate()
-                print('round: ' + str(round_num) + ' -> global model on local dataset acc: ' + str(local_acc))
-                print('round: ' + str(round_num) + ' -> global model on valid dataset acc: ' + str(global_acc))
-
-                self.global_model_local_data_acc.append(local_acc)
-                self.global_model_global_data_acc.append(global_acc)
-
-                property = random.random()
-
-                # if (self.index == 2 and req['round_number'] % self.drop_every_round == 0):
-                if (property >= 0.7):
-                    resp = {
-                        'round_number': req['round_number'],
-                        'weights': req['current_weights'],
-                        'train_size': self.local_model.x_train.shape[0],
-                        'valid_size': self.local_model.x_valid.shape[0],
-                        'train_loss': self.prev_train_loss,
-                        'train_accuracy': self.prev_train_acc,
-                        'current_cq': cur_cq,
-                        'pred_cq': pred_cq,
-                        'current_cu': cur_cu,
-                        'pred_cu': pred_cu
-                    }
-                    print("\nclient drop at round: ", req['round_number'])
-                    print(" random: ", property)
-
-                else:
-                    # 训练一轮
-                    my_weights, train_loss, train_accuracy = self.local_model.train_one_round()
-                    self.prev_train_loss = train_loss
-                    self.prev_train_acc = train_accuracy
-
-                    resp = {
-                        'round_number': req['round_number'],
-                        'weights': obj_to_pickle_string(my_weights),
-                        'train_size': self.local_model.x_train.shape[0],
-                        'valid_size': self.local_model.x_valid.shape[0],
-                        'train_loss': train_loss,
-                        'train_accuracy': train_accuracy,
-                        'current_cq': cur_cq,
-                        'pred_cq': pred_cq,
-                        'current_cu': cur_cu,
-                        'pred_cu': pred_cu
-                    }
-                    print("\nsuccessfully update at round: ", req['round_number'])
-
-                if req['run_validation']:
-                    valid_loss, valid_accuracy = self.local_model.validate()
-                    resp['valid_loss'] = valid_loss
-                    resp['valid_accuracy'] = valid_accuracy
-
-                self.sio.emit('client_update', resp)
-
-            #
+            # # 随机掉线测试
             # if req['is_selected'] == 'true':
-            #
-            #     # good to updated
-            #     if total_cq >= 6 and total_cu >= 6:
-            #
-            #
-            #         if req['weights_format'] == 'pickle':
-            #             weights = pickle_string_to_obj(req['current_weights'])
+            #     if req['weights_format'] == 'pickle':
+            #         weights = pickle_string_to_obj(req['current_weights'])
             #         self.local_model.set_weights(weights)
             #
+            #     # 测试下载的global model在client上的精度
+            #     test_loss, local_acc = self.local_model.evaluate()
+            #     valid_loss, global_acc = self.local_model.validate()
+            #     print('round: ' + str(round_num) + ' -> global model on local dataset acc: ' + str(local_acc))
+            #     print('round: ' + str(round_num) + ' -> global model on valid dataset acc: ' + str(global_acc))
+            #
+            #     self.global_model_local_data_acc.append(local_acc)
+            #     self.global_model_global_data_acc.append(global_acc)
+            #
+            #     property = random.random()
+            #
+            #     # if (self.index == 2 and req['round_number'] % self.drop_every_round == 0):
+            #     if (property >= 0.7):
+            #         resp = {
+            #             'round_number': req['round_number'],
+            #             'weights': req['current_weights'],
+            #             'train_size': self.local_model.x_train.shape[0],
+            #             'valid_size': self.local_model.x_valid.shape[0],
+            #             'train_loss': self.prev_train_loss,
+            #             'train_accuracy': self.prev_train_acc,
+            #             'current_cq': cur_cq,
+            #             'pred_cq': pred_cq,
+            #             'current_cu': cur_cu,
+            #             'pred_cu': pred_cu
+            #         }
+            #         print("\nclient drop at round: ", req['round_number'])
+            #         print(" random: ", property)
+            #
+            #     else:
             #         # 训练一轮
             #         my_weights, train_loss, train_accuracy = self.local_model.train_one_round()
             #         self.prev_train_loss = train_loss
@@ -255,101 +223,168 @@ class FederatedClient(object):
             #             'pred_cu': pred_cu
             #         }
             #         print("\nsuccessfully update at round: ", req['round_number'])
-            #         if req['run_validation']:
-            #             valid_loss, valid_accuracy = self.local_model.validate()
-            #             resp['valid_loss'] = valid_loss
-            #             resp['valid_accuracy'] = valid_accuracy
             #
-            #         self.sio.emit('client_update', resp)
-            #
-            #     # selectd but timeout
-            #     else:
-            #         if req['weights_format'] == 'pickle':
-            #             weights = pickle_string_to_obj(req['current_weights'])
-            #         self.local_model.set_weights(weights)
-            #
-            #         resp = {
-            #             'round_number': req['round_number'],
-            #             'train_size': self.local_model.x_train.shape[0],
-            #             'valid_size': self.local_model.x_valid.shape[0],
-            #             'train_loss': self.prev_train_loss,
-            #             'train_accuracy': self.prev_train_acc,
-            #             'current_cq': cur_cq,
-            #             'pred_cq': pred_cq,
-            #             'current_cu': cur_cu,
-            #             'pred_cu': pred_cu
-            #         }
-            #         print("\nclient timeout at round: ", req['round_number'])
-            #         if req['run_validation']:
-            #             valid_loss, valid_accuracy = self.local_model.validate()
-            #             resp['valid_loss'] = valid_loss
-            #             resp['valid_accuracy'] = valid_accuracy
-            #
-            #
-            #         self.sio.emit('client_timeout', resp)
-            # # not selected
-            # else:
-            #     if req['weights_format'] == 'pickle':
-            #         weights = pickle_string_to_obj(req['current_weights'])
-            #     self.local_model.set_weights(weights)
-            #
-            #     resp = {
-            #         'round_number': req['round_number'],
-            #         'train_size': self.local_model.x_train.shape[0],
-            #         'valid_size': self.local_model.x_valid.shape[0],
-            #         'train_loss': self.prev_train_loss,
-            #         'train_accuracy': self.prev_train_acc,
-            #         'current_cq': cur_cq,
-            #         'pred_cq': pred_cq,
-            #         'current_cu': cur_cu,
-            #         'pred_cu': pred_cu
-            #     }
-            #     print("\nnot selected at round: ", req['round_number'])
             #     if req['run_validation']:
             #         valid_loss, valid_accuracy = self.local_model.validate()
             #         resp['valid_loss'] = valid_loss
             #         resp['valid_accuracy'] = valid_accuracy
             #
-            #
-            #     self.sio.emit('not_client_update', resp)
+            #     self.sio.emit('client_update', resp)
+
+            if req['is_selected'] == 'true':
+
+                if req['weights_format'] == 'pickle':
+                    weights = pickle_string_to_obj(req['current_weights'])
+                    self.local_model.set_weights(weights)
+
+                # 测试下载的global model在client上的精度
+                local_loss, local_acc = self.local_model.evaluate()
+                global_loss, global_acc = self.local_model.validate()
+
+                print('round: ' + str(round_num) + ' -> global model on local dataset acc: ' + str(local_acc))
+                print('round: ' + str(round_num) + ' -> global model on local dataset loss: ' + str(local_loss))
+                print('round: ' + str(round_num) + ' -> global model on common dataset acc: ' + str(global_acc))
+                print('round: ' + str(round_num) + ' -> global model on common dataset loss: ' + str(global_loss))
+
+                self.global_model_local_data_acc.append(local_acc)
+                self.global_model_local_data_loss.append(local_loss)
+                self.global_model_common_data_acc.append(global_acc)
+                self.global_model_common_data_loss.append(global_loss)
+
+                # good to updated
+                if total_cq >= 6 and total_cu >= 6:
+
+                    # 训练一轮
+                    my_weights, train_loss, train_accuracy = self.local_model.train_one_round()
+                    self.prev_train_loss = train_loss
+                    self.prev_train_acc = train_accuracy
+
+                    resp = {
+                        'round_number': req['round_number'],
+                        'weights': obj_to_pickle_string(my_weights),
+                        'train_size': self.local_model.x_train.shape[0],
+                        'valid_size': self.local_model.x_valid.shape[0],
+                        'train_loss': train_loss,
+                        'train_accuracy': train_accuracy,
+                        'current_cq': cur_cq,
+                        'pred_cq': pred_cq,
+                        'current_cu': cur_cu,
+                        'pred_cu': pred_cu
+                    }
+                    print("\nsuccessfully update at round: ", req['round_number'])
+                    if req['run_validation']:
+                        valid_loss, valid_accuracy = self.local_model.validate()
+                        resp['valid_loss'] = valid_loss
+                        resp['valid_accuracy'] = valid_accuracy
+
+                    self.sio.emit('client_update', resp)
+
+                # selectd but timeout
+                else:
+
+                    resp = {
+                        'round_number': req['round_number'],
+                        'train_size': self.local_model.x_train.shape[0],
+                        'valid_size': self.local_model.x_valid.shape[0],
+                        'train_loss': self.prev_train_loss,
+                        'train_accuracy': self.prev_train_acc,
+                        'current_cq': cur_cq,
+                        'pred_cq': pred_cq,
+                        'current_cu': cur_cu,
+                        'pred_cu': pred_cu
+                    }
+                    print("\nclient timeout at round: ", req['round_number'])
+
+                    if req['run_validation']:
+                        valid_loss, valid_accuracy = self.local_model.validate()
+                        resp['valid_loss'] = valid_loss
+                        resp['valid_accuracy'] = valid_accuracy
+
+                    self.sio.emit('client_timeout', resp)
+            # not selected
+            else:
+                if req['weights_format'] == 'pickle':
+                    weights = pickle_string_to_obj(req['current_weights'])
+                    self.local_model.set_weights(weights)
+
+                resp = {
+                    'round_number': req['round_number'],
+                    'train_size': self.local_model.x_train.shape[0],
+                    'valid_size': self.local_model.x_valid.shape[0],
+                    'train_loss': self.prev_train_loss,
+                    'train_accuracy': self.prev_train_acc,
+                    'current_cq': cur_cq,
+                    'pred_cq': pred_cq,
+                    'current_cu': cur_cu,
+                    'pred_cu': pred_cu
+                }
+                print("\nclient not selected at round: ", req['round_number'])
+
+                if req['run_validation']:
+                    valid_loss, valid_accuracy = self.local_model.validate()
+                    resp['valid_loss'] = valid_loss
+                    resp['valid_accuracy'] = valid_accuracy
+
+
+                self.sio.emit('client_not_selected_update', resp)
 
         # client上传测试精度
         def on_stop_and_eval(*args):
             req = args[0]
 
-            valid_loss, valid_accuracy = self.local_model.validate()
-            print('final local model on global dataset acc: ' + str(valid_accuracy))
+            global_loss, global_acc = self.local_model.validate()
+
+            print('final local model on common dataset acc: ' + str(global_acc))
+            print('final local model on common dataset acc: ' + str(global_loss))
 
 
             if req['weights_format'] == 'pickle':
                 weights = pickle_string_to_obj(req['current_weights'])
+                self.local_model.set_weights(weights)
 
-            self.local_model.set_weights(weights)
-            test_loss, test_accuracy = self.local_model.evaluate()
-            print('final global model on local dataset acc: ' + str(test_accuracy))
+            local_loss, local_acc = self.local_model.evaluate()
+            print('final global model on local dataset acc: ', str(local_acc))
+            print('final global model on local dataset loss: ', str(local_loss))
 
-            print('init result.txt')
+            self.global_model_local_data_acc.append(local_acc)
+            self.global_model_local_data_loss.append(local_loss)
+            self.global_model_common_data_acc.append(global_acc)
+            self.global_model_common_data_loss.append(global_loss)
 
-            acc_file_dir = 'result/mnist/nniid/'
+            print('=============init result.txt==================')
+
+            acc_file_dir = 'result/mnist/nniid/acc'
+            loss_file_dir = 'result/mnist/nniid/loss'
 
             local_acc_file = acc_file_dir + 'client_' + str(self.index) + '_global_model_local_data_acc.txt'
             with open(local_acc_file, 'a') as lf:
                 for i in self.global_model_local_data_acc:
                     lf.write(str(i)+'\n')
 
+            local_loss_file = loss_file_dir + 'client_' + str(self.index) + '_local_loss.txt'
+            with open(local_loss_file, 'a') as lf:
+                for i in self.global_model_local_data_loss:
+                    lf.write(str(i) + '\n')
+
             if (self.index == 0):
                 global_acc_file = acc_file_dir + 'global_model_global_data_acc.txt'
                 with open(global_acc_file, 'a') as gf:
-                    for i in self.global_model_global_data_acc:
+                    for i in self.global_model_common_data_acc:
+                        gf.write(str(i) + '\n')
+
+                global_loss_file = loss_file_dir + 'global_loss.txt'
+                with open(global_loss_file, 'a') as gf:
+                    for i in self.global_model_common_data_loss:
                         gf.write(str(i) + '\n')
 
             resp = {
                 'test_size': self.local_model.x_test.shape[0],
-                'test_loss': test_loss,
-                'test_accuracy': test_accuracy
+                'test_loss': local_loss,
+                'test_accuracy': local_acc
             }
 
             self.sio.emit('client_eval', resp)
+            sys.exit(0)
 
         self.sio.on('connect', on_connect)
         self.sio.on('disconnect', on_disconnect)
@@ -357,11 +392,6 @@ class FederatedClient(object):
         self.sio.on('init', lambda *args: self.on_init(*args))
         self.sio.on('request_update', on_request_update)
         self.sio.on('stop_and_eval', on_stop_and_eval)
-
-    # clients间歇地休眠
-    def intermittently_sleep(self, p=.1, low=10, high=100):
-        if (random.random() < p):
-            time.sleep(random.randint(low, high))
 
 
 if __name__ == "__main__":

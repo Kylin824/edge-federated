@@ -6,6 +6,7 @@ from keras.layers import Dense, Dropout, Flatten, Activation
 from keras.layers import Conv2D, MaxPooling2D
 from keras.optimizers import Adam
 import random
+import sys
 import codecs
 import numpy as np
 import json
@@ -16,28 +17,22 @@ from flask_socketio import *
 
 
 class GlobalModel(object):
-    """docstring for GlobalModel"""
 
     def __init__(self):
         self.model = self.build_model()
         self.current_weights = self.model.get_weights()
-        # for convergence check
         self.prev_train_loss = None
-
-        # all rounds; losses[i] = [round#, timestamp, loss]
-        # round# could be None if not applicable
         self.train_losses = []
         self.valid_losses = []
         self.train_accuracies = []
         self.valid_accuracies = []
         self.update_num = []
-
         self.training_start_time = int(round(time.time()))
 
+    # 由子类重写
     def build_model(self):
         raise NotImplementedError()
 
-    # client_updates = [(w, n)..]
     def update_weights(self, client_weights, client_sizes):
         new_weights = [np.zeros(w.shape) for w in self.current_weights]
         total_size = np.sum(client_sizes)
@@ -49,14 +44,10 @@ class GlobalModel(object):
 
     def aggregate_loss_accuracy(self, client_losses, client_accuracies, client_sizes):
         total_size = np.sum(client_sizes)
-        # weighted sum
-        aggr_loss = np.sum(client_losses[i] / total_size * client_sizes[i]
-                           for i in range(len(client_sizes)))
-        aggr_accuraries = np.sum(client_accuracies[i] / total_size * client_sizes[i]
-                                 for i in range(len(client_sizes)))
+        aggr_loss = np.sum(client_losses[i] / total_size * client_sizes[i] for i in range(len(client_sizes)))
+        aggr_accuraries = np.sum(client_accuracies[i] / total_size * client_sizes[i] for i in range(len(client_sizes)))
         return aggr_loss, aggr_accuraries
 
-    # cur_round coule be None
     def aggregate_train_loss_accuracy(self, client_losses, client_accuracies, client_sizes, cur_round, update_num):
         cur_time = int(round(time.time())) - self.training_start_time
         aggr_loss, aggr_accuraries = self.aggregate_loss_accuracy(client_losses, client_accuracies, client_sizes)
@@ -66,7 +57,6 @@ class GlobalModel(object):
             json.dump(self.get_stats(), outfile)
         return aggr_loss, aggr_accuraries
 
-    # cur_round coule be None
     def aggregate_valid_loss_accuracy(self, client_losses, client_accuracies, client_sizes, cur_round, update_num):
         cur_time = int(round(time.time())) - self.training_start_time
         aggr_loss, aggr_accuraries = self.aggregate_loss_accuracy(client_losses, client_accuracies, client_sizes)
@@ -110,53 +100,43 @@ class GlobalModel_MNIST_CNN(GlobalModel):
 
 ######## Flask server with Socket IO ########
 class FLServer(object):
-    MIN_NUM_WORKERS = 3  # 超过多少个即可开始本轮训练
-    MAX_NUM_ROUNDS = 50  # 最大轮次
+    MIN_NUM_CLIENTS = 3  # 超过多少个即可开始本轮训练
+    MAX_NUM_ROUNDS = 3  # 最大轮次
     NUM_CLIENTS_CONTACTED_PER_ROUND = 3  # 每轮选多少个设备
-    ROUNDS_BETWEEN_VALIDATIONS = 3
+    ROUNDS_BETWEEN_VALIDATIONS = 3 # 每多少轮测试一次精度
 
     def __init__(self, global_model, host, port):
         self.global_model = global_model()
-
         self.ready_client_sids = set()
-
         self.ordered_client = []
-
         self.client_index = -1
         self.ready_client_infos = defaultdict(list)
-
         self.app = Flask(__name__)
         self.socketio = SocketIO(self.app)
         self.host = host
         self.port = port
         self.model_id = str(uuid.uuid4())
-
         self.mutex = 1
         self.observation = []
-
-        #####
-        # training states
         self.current_round = -1  # -1 for not yet started
         self.current_round_client_updates = []
         self.current_round_valid_all = []
         self.eval_client_updates = []
         self.client_update_amount = 0
-        #####
 
         # socket io messages
         self.register_handles()
 
-        @self.app.route('/')
-        def dashboard():
-            return render_template('dashboard.html')
-
-        @self.app.route('/stats')
-        def status_page():
-            return json.dumps(self.global_model.get_stats())
+        # @self.app.route('/')
+        # def dashboard():
+        #     return render_template('dashboard.html')
+        #
+        # @self.app.route('/stats')
+        # def status_page():
+        #     return json.dumps(self.global_model.get_stats())
 
     def register_handles(self):
         # single-threaded async, no need to lock
-
         @self.socketio.on('connect')
         def handle_connect():
             print(request.sid, "connected")
@@ -166,7 +146,7 @@ class FLServer(object):
             print(request.sid, "reconnected")
 
         @self.socketio.on('disconnect')
-        def handle_reconnect():
+        def handle_disconnect():
             print(request.sid, "disconnected")
             # delete client from ready set
             if request.sid in self.ready_client_sids:
@@ -178,7 +158,7 @@ class FLServer(object):
             print("client wake_up: ", request.sid)
              # 01234
             self.client_index += 1
-            client_index = (self.client_index + 0) % FLServer.NUM_CLIENTS_CONTACTED_PER_ROUND
+            client_index = self.client_index % FLServer.NUM_CLIENTS_CONTACTED_PER_ROUND
             emit('init', {
                 'model_json': self.global_model.model.to_json(),
                 'model_id': self.model_id,
@@ -202,8 +182,8 @@ class FLServer(object):
             self.ready_client_infos[request.sid].append(int(data['pred_cu']))
             print("ready client infos: ")
             print(self.ready_client_infos)
-            # 达到开始训练最小数量要求
-            if len(self.ready_client_sids) >= FLServer.MIN_NUM_WORKERS and self.current_round == -1:
+
+            if len(self.ready_client_sids) >= FLServer.MIN_NUM_CLIENTS and self.current_round == -1:
                 print("client total amount: ", self.client_update_amount)
 
                 first_observation = []
@@ -391,6 +371,7 @@ class FLServer(object):
                 print("aggr_test_accuracy", aggr_test_accuracy)
                 print("== done ==")
                 self.eval_client_updates = None  # special value, forbid evaling again
+                self.socketio.stop()
 
     def select_rand_client(self, ready_client_sids):
         client_sids_selected = random.sample(list(ready_client_sids), FLServer.NUM_CLIENTS_CONTACTED_PER_ROUND)
